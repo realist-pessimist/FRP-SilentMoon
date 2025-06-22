@@ -42,6 +42,10 @@ android {
 
 dependencies {
 
+    implementation(project(":core"))
+    implementation(project(":feature-reservation"))
+    implementation(project(":analytics"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -66,6 +70,7 @@ dependencies {
     testImplementation(libs.kotest.framework)
     testImplementation(libs.kotest.core)
     testImplementation(libs.kotest.property)
+    testImplementation(kotlin("reflect"))
 }
 
 tasks.withType<Test> {

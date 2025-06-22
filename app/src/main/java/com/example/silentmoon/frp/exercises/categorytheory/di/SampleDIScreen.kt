@@ -40,6 +40,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import com.example.feature.reservation.ReservationRequest
+import com.example.feature.reservation.makeReservation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -64,20 +66,7 @@ fun ReservationScreen() {
 
   // Создаем контекст с зависимостями
   val reservationContext = remember {
-    object :
-      TableRepository by NetworkTableRepository(),
-      Notifier by object : Notifier {
-        override fun showSuccess(message: String) {
-          successMessage = message
-          errorMessage = null
-        }
-
-        override fun showError(message: String) {
-          errorMessage = message
-          successMessage = null
-        }
-      },
-      AnalyticsTracker by FirebaseAnalyticsTracker() {}
+    buildReservationContext()
   }
 
   var showDatePicker by remember { mutableStateOf(false) }

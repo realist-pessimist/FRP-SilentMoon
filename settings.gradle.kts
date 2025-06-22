@@ -22,3 +22,6 @@ dependencyResolutionManagement {
 rootProject.name = "Silent Moon"
 include(":app")
 include(":common")
+include(":feature-reservation")
+include(":core")
+include(":analytics")

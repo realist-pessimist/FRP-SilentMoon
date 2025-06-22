@@ -1,30 +1,29 @@
 package com.example.silentmoon.frp.exercises.categorytheory.di
 
-import arrow.core.flatMap
-import java.io.Serializable
+import com.example.analytics.AnalyticsContext
+import com.example.analytics.AnalyticsTracker
+import com.example.analytics.Event
+import com.example.feature.reservation.ReservationContext
+import com.example.feature.reservation.TableRepository
+import java.util.logging.Logger
 
-interface TableRepository {
-  suspend fun checkTableAvailability(date: String, guests: Int): Result<Boolean>
-  suspend fun reserveTable(tableId: Int, customerName: String): Result<Boolean>
+fun buildReservationContext(
+  logger: Logger = Logger.getLogger("Reservation"),
+  tableRepository: TableRepository = NetworkTableRepository(),
+  tracker: AnalyticsTracker = RealAnalyticsTracker()
+): ReservationContextImpl {
+  return ReservationContextImpl(
+    logger = logger,
+    tableRepository = tableRepository,
+    tracker = tracker
+  )
 }
 
-interface Notifier {
-  fun showSuccess(message: String)
-  fun showError(message: String)
-}
-
-interface AnalyticsTracker {
-  fun trackReservationAttempt()
-  fun trackReservationSuccess()
-}
-
-
-data class ReservationRequest(
-  val tableId: Int,
-  val customerName: String,
-  val date: String,
-  val guests: Int
-)
+class ReservationContextImpl(
+  override val logger: Logger,
+  override val tableRepository: TableRepository,
+  override val tracker: AnalyticsTracker
+) : ReservationContext, AnalyticsContext
 
 // Реализации для Android
 class NetworkTableRepository : TableRepository {
@@ -43,42 +42,8 @@ class NetworkTableRepository : TableRepository {
   }
 }
 
-class FirebaseAnalyticsTracker : AnalyticsTracker {
-  override fun trackReservationAttempt() {
-    // Реальная реализация через Firebase
-  }
-
-  override fun trackReservationSuccess() {
-    // Аналогично
-  }
-}
-
-suspend fun <Ctx> Ctx.makeReservation(request: ReservationRequest): Result<Serializable>
-        where Ctx : TableRepository, Ctx : Notifier, Ctx : AnalyticsTracker {
-  return run {
-    trackReservationAttempt()
-    checkTableAvailability(request.date, request.guests)
-      .flatMap { isAvailable ->
-        if (!isAvailable) {
-          showError("Столик на ${request.date} недоступен")
-          Result.failure(IllegalStateException("Table unavailable"))
-        } else {
-          Result.success(Unit)
-        }
-      }
-      .flatMap {
-        reserveTable(request.tableId, request.customerName)
-          .onSuccess {
-            trackReservationSuccess()
-            showSuccess("Столик #${request.tableId} успешно забронирован!")
-          }
-          .onFailure {
-            showError("Ошибка бронирования")
-          }
-      }
-      .recoverCatching { e ->
-        showError("Ошибка: ${e.message}")
-        Result.failure<Throwable>(e)
-      }
+class RealAnalyticsTracker : AnalyticsTracker {
+  override fun track(event: Event) {
+    // Реалная отправка аналитики
   }
 }
