@@ -51,6 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.arrow.core)
+    implementation(libs.atomic)
     implementation(libs.arrow.functions)
     implementation(libs.arrow.fx.coroutines)
     implementation(libs.arrow.optics.kt)
