@@ -15,7 +15,7 @@
 
 1. [Функциональное программирование в Android. Знакомство с парадигмой](https://habr.com/ru/companies/dododev/articles/917222/)  
 2. [Функциональное программирование в Android. Структуры данных и State Machine](https://habr.com/ru/companies/dododev/articles/917960/)
-3. Функциональное программирование в Android. Чистые функции и DI
+3. [Функциональное программирование в Android. Теория категорий и DI](https://habr.com/ru/companies/dododev/articles/922710/)
 4. Функциональное программирование в Android. Побочные эффекты и ELM-архитектура
 
 ## 🛠 Технологический стек
