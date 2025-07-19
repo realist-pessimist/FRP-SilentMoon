@@ -1,39 +1,42 @@
 package com.example.feature.reservation
 
-import arrow.core.flatMap
+import arrow.core.Either
+import arrow.core.raise.either
+import arrow.core.raise.ensure
 import com.example.analytics.AnalyticsContext
 import com.example.analytics.Event
-import java.io.Serializable
-import java.util.logging.Level
 
-suspend fun <Ctx> Ctx.makeReservation(request: ReservationRequest) : Result<Serializable>
-        where Ctx : ReservationContext, Ctx : AnalyticsContext {
-  return run {
-    logger.info("Start")
-    tableRepository.checkTableAvailability(request.date, request.tableId)
-      .flatMap { isAvailable ->
-        if (!isAvailable) {
-          logger.log(Level.WARNING, "Столик на ${request.date} недоступен")
-          Result.failure(IllegalStateException("Table unavailable"))
-        } else {
-          Result.success(Unit)
-        }
-      }
-      .flatMap {
-        tableRepository.reserveTable(request.tableId, request.customerName)
-          .onSuccess {
-            tracker.track(
-              event = Event(eventParams = mapOf("reserve_table_success" to request.tableId))
-            )
-            logger.log(Level.INFO, "Столик #${request.tableId} успешно забронирован!")
-          }
-          .onFailure {
-            logger.log(Level.WARNING, "Столик #${request.tableId} успешно забронирован!")
-          }
-      }
-      .recoverCatching { e ->
-        logger.log(Level.WARNING, "Ошибка: ${e.message}")
-        Result.failure<Throwable>(e)
-      }
+suspend fun <Ctx> Ctx.makeReservation(request: ReservationRequest): Either<ReservationError, ReservationSuccess>
+        where Ctx : ReservationContext, Ctx : AnalyticsContext, Ctx : DatabaseContext = either {
+  logger.info("Starting reservation for ${request.customerName}")
+
+  val isAvailable = tableRepository
+    .run { this@makeReservation.checkTableAvailability(request.date, request.guests) }
+    .bind()
+
+  ensure(isAvailable) {
+    logger.warning("Table unavailable for ${request.date}")
+    ReservationError.TableUnavailable(request.date)
   }
+
+  // Бронирование
+  tableRepository
+    .run { this@makeReservation.reserveTable(request.tableId, request.customerName) }
+    .bind()
+    .also {
+      tracker.track(Event(mapOf(
+        "event" to "reservation_success",
+        "table_id" to request.tableId
+      )))
+      logger.info("Table #${request.tableId} reserved!")
+    }
+
+  ReservationSuccess(request.tableId, request.date)
 }
+
+sealed interface ReservationError {
+  data class TableUnavailable(val date: String) : ReservationError
+  data class DatabaseError(val cause: Throwable) : ReservationError
+}
+
+data class ReservationSuccess(val tableId: Int, val date: String)

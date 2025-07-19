@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import arrow.core.Either
 import com.example.feature.reservation.ReservationRequest
 import com.example.feature.reservation.makeReservation
 import kotlinx.coroutines.CoroutineScope
@@ -161,7 +162,12 @@ fun ReservationScreen() {
           CoroutineScope(Dispatchers.IO).launch {
             isLoading = true
             delay(1000) //Имитация загрузки
-            reservationContext.makeReservation(request)
+            when (val result = reservationContext.makeReservation(request)) {
+              is Either.Left -> errorMessage = result.value.toString()
+              is Either.Right -> {
+                successMessage = "Столик #${result.value.tableId} успешно забронирован!"
+              }
+            }
             isLoading = false
           }
         },
